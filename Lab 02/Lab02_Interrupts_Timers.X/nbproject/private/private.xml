@@ -3,9 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/cps-student-19/Downloads/Projects/Lab%2002/Lab02_Interrupts_Timers.X/src/main.c</file>
-            <file>file:/home/cps-student-19/Downloads/Projects/Lab%2002/Lab02_Interrupts_Timers.X/src/led.c</file>
-            <file>file:/home/cps-student-19/Downloads/Projects/Lab%2002/Lab02_Interrupts_Timers.X/src/lab02.c</file>
+            <file>file:/home/cps-student-19/cps_is_fun/Lab%2002/Lab02_Interrupts_Timers.X/src/main.c</file>
+            <file>file:/home/cps-student-19/cps_is_fun/Lab%2002/Lab02_Interrupts_Timers.X/src/lab02.c</file>
+            <file>file:/home/cps-student-19/cps_is_fun/Lab%2002/Lab02_Interrupts_Timers.X/src/led.c</file>
+            <file>file:/home/cps-student-19/cps_is_fun/Lab%2002/Lab02_Interrupts_Timers.X/include/lcd.h</file>
+            <file>file:/home/cps-student-19/cps_is_fun/Lab%2002/Lab02_Interrupts_Timers.X/include/led.h</file>
         </group>
     </open-files>
 </project-private>
