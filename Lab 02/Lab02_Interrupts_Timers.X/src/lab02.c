@@ -15,8 +15,8 @@
 uint16_t counter = 0;// number of iteration
 uint16_t second = 0;
 uint16_t millisec = 0;
-uint16_t cycles = 0;
-double time_mm = 0;
+volatile uint16_t cycles = 0;
+volatile double time_mm = 0;
 
 uint16_t min = 0;
 uint16_t sec = 0;
@@ -83,33 +83,30 @@ void timer_loop()
     lcd_locate(0, 1);
     lcd_printf("Group: CPS19");
     
-   
-
+    
+     
     
     
     while(TRUE)
     {
-        counting(counter);
-        lcd_locate(0,2);
-        lcd_printf("cycles: %u" , cycles);
-        lcd_locate(0,3);
-        lcd_printf("d: %.4f ms", time_mm );
-        counter++;
+        if((counter % 2000)==0)
+        {
+            counting(counter);
+        
+         
+            lcd_locate(0,2);
+            lcd_printf("cycles: %u" , cycles);
+            lcd_locate(0,3);
+            lcd_printf("time: %.4f ms", time_mm );
+            lcd_locate(0,5);
+            lcd_printf(" %u", counter );
+
+            lcd_locate(0,6);
+            lcd_printf("%02u:%02u:%03u", min, sec, millisec);
+        }
        
-        
-        
-        
-        
-        
-       
-        //min = second % 60;
-        //sec = second - (60 * min);
-        
-        lcd_locate(0,6);
-        lcd_printf("%02u:%02u:%03u", min, sec, millisec);
-        
-        
-        
+        counter++; 
+  
         
     }
     
@@ -142,21 +139,22 @@ void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T2Interrupt(void)
 
 // function that checks at which iteration we are and toggle the LED every 2000 iterations
 void counting(int counter){
-    if ((counter % 2000 )== 0){
+    
+            TOGGLELED(LED3_PORT);//Toggle LED3
             
             T3CONbits.TON = 0; // stop timer 3
             cycles = TMR3; // read TMR3
            
             
             time_mm = (double)cycles * 1000 / FCY;
-           
-            TOGGLELED(LED3_PORT);//Toggle LED3
+          
+            
             TMR3 = 0x00; 
             T3CONbits.TON = 1;
            
             
             
-    }
+    
 
 }
 
