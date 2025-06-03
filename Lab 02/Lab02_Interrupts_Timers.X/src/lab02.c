@@ -12,14 +12,13 @@
 
 #define FCY_EXT 32768
 
-uint16_t counter = 0;// number of iteration
-uint16_t second = 0;
-uint16_t millisec = 0;
+volatile uint32_t counter = 0;// number of iteration
+volatile uint16_t millisec = 0;
 volatile uint16_t cycles = 0;
 volatile double time_mm = 0;
 
-uint16_t min = 0;
-uint16_t sec = 0;
+volatile uint16_t min = 0;
+volatile uint32_t sec = 0;
 
 
 void initialize_timer()
@@ -39,11 +38,11 @@ void initialize_timer()
     CLEARBIT(T2CONbits.TCS);
     CLEARBIT(T2CONbits.TGATE);
     TMR2 = 0x00;
-    IPC1bits.T2IP = 0x01;
+    IPC1bits.T2IP = 0x05;
     T2CONbits.TCKPS = 0b11;
     CLEARBIT(IFS0bits.T2IF);
     IEC0bits.T2IE = 1;
-    PR2 = 100;
+    PR2 = 99;
     T2CONbits.TON = 1;
 
 
@@ -54,9 +53,9 @@ void initialize_timer()
     T1CONbits.TCS = 1; // use the external clock source of 32.768 KHz (manual page 11)
     CLEARBIT(T1CONbits.TGATE); // disable gated timer mode
     T1CONbits.TSYNC = 0; // disable syncro
-    PR1 = 128; // set the PR1, same formula as timer 2
+    PR1 = 127; // set the PR1, same formula as timer 2
     TMR1 = 0x00; // rest TMR1 to 0
-    IPC0bits.T1IP = 0x02; // set priority level: here is set to one but we have to decide
+    IPC0bits.T1IP = 0x06; // set priority level: here is set to one but we have to decide
     IFS0bits.T1IF = 0; //clear flag
     IEC0bits.T1IE = 1; //enable interrupt 
     T1CONbits.TON = 1; // start the timer
@@ -71,7 +70,7 @@ void initialize_timer()
     PR3 = 65535; //set the PR higher value possible (considering a 16 bit register)
     
     TMR3 = 0x00;
-    T3CONbits.TON = 1;
+    
     
 
 }
@@ -89,23 +88,25 @@ void timer_loop()
     
     while(TRUE)
     {
+        counter++;
+        
         if((counter % 2000)==0)
         {
-            counting(counter);
+            counter = 0;
+            counting();
         
          
             lcd_locate(0,2);
-            lcd_printf("cycles: %u" , cycles);
+            lcd_printf("c: %u" , cycles);
             lcd_locate(0,3);
-            lcd_printf("time: %.4f ms", time_mm );
-            lcd_locate(0,5);
-            lcd_printf(" %u", counter );
+            lcd_printf("d: %.4f ms", time_mm );
+        
 
             lcd_locate(0,6);
-            lcd_printf("%02u:%02u:%03u", min, sec, millisec);
+            lcd_printf("%02u:%02lu:%03u", min, sec, millisec);
         }
        
-        counter++; 
+         
   
         
     }
@@ -138,22 +139,25 @@ void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T2Interrupt(void)
 }
 
 // function that checks at which iteration we are and toggle the LED every 2000 iterations
-void counting(int counter){
+void counting(){
     
             TOGGLELED(LED3_PORT);//Toggle LED3
-            
-            T3CONbits.TON = 0; // stop timer 3
+            volatile int i = 0;
+       
+            TMR3 = 0x00;
+            T3CONbits.TON = 1;
+            for (i = 0; i<2000; i++){}
+            T3CONbits.TON = 0;// stop timer 3
             cycles = TMR3; // read TMR3
            
             
-            time_mm = (double)cycles * 1000 / FCY;
+            time_mm = (double)(cycles) / (FCY / 1000.0);
           
             
-            TMR3 = 0x00; 
-            T3CONbits.TON = 1;
+             
+            
            
-            
-            
+                     
     
 
 }
