@@ -60,7 +60,7 @@ void dac_initialize()
 
 void dac_write(uint16_t value) {
     // Construct 16-bit command for DAC A, gain=1, output enabled
-    uint16_t command = (1 << 15) |    // DAC A
+    uint16_t command = (0 << 15) |    // DAC A
                       (0 << 14) |    // Unbuffered
                       (0 << 13) |    // Gain = 1 (0-4.095V range)
                       (1 << 12) |    // Output enabled
@@ -136,11 +136,25 @@ void timer_initialize()
     // lower 8 bits of the register OSCCON)
     __builtin_write_OSCCONL(OSCCONL | 2);
     // configure timer
-    
+    T1CONbits.TON = 0;
+    T1CONbits.TCS = 1;
+    T1CONbits.TGATE = 0;
+    T1CONbits.TCKPS = 0b00;
+    TMR1 = 0x00;
+    PR1 = 0.5 * FCY_EXT;
+    IPC0bits.T1IP = 0x01;
+    IFS0bits.T1IF = 0;
+    IEC0bits.T1IE = 1;
+    T1CONbits.TON = 1;
 }
 
+uint8_t global_counter = 0;
 // interrupt service routine?
-
+void __attribute__((__interrupt__))_T1Interrupt(void)
+{
+    global_counter++;
+    IFS0bits.T1IF =0;
+}
 /*
  * main loop
  */
@@ -163,15 +177,18 @@ void main_loop()
         
         // 1V output with 500ms delay
         dac_output_voltage(1.0f);
-        __delay_ms(500);  // Slow enough to read updates
+        global_counter = 0;
+        while(global_counter <1){}
         
         // 2.5V output with 2000ms delay
         dac_output_voltage(2.5f);
-         __delay_ms(2000);  // Slow enough to read updates
+        global_counter = 0;
+        while(global_counter < 4){}
         
         // 3.5V output with 1000ms delay
         dac_output_voltage(3.5f);
-         __delay_ms(1000);  // Slow enough to read updates
+        global_counter = 0;
+        while(global_counter < 2){}
     }
     
 }

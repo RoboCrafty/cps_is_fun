@@ -5,6 +5,10 @@
         <group>
             <file>file:/home/cps-student-19/Desktop/cps_is_fun/Lab%2003/Lab03_DAC.X/src/main.c</file>
             <file>file:/home/cps-student-19/Desktop/cps_is_fun/Lab%2003/Lab03_DAC.X/src/lab03.c</file>
+            <file>file:/home/cps-student-19/Desktop/cps_is_fun/Lab%2003/Lab03_DAC.X/include/lab03.h</file>
+            <file>file:/home/cps-student-19/Desktop/cps_is_fun/Lab%2003/Lab03_DAC.X/include/lcd.h</file>
+            <file>file:/home/cps-student-19/Desktop/cps_is_fun/Lab%2003/Lab03_DAC.X/include/led.h</file>
+            <file>file:/home/cps-student-19/Desktop/cps_is_fun/Lab%2003/Lab03_DAC.X/include/types.h</file>
         </group>
     </open-files>
 </project-private>
