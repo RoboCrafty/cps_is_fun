@@ -179,16 +179,17 @@ void main_loop()
         dac_output_voltage(1.0f);
         global_counter = 0;
         while(global_counter <1){}
-        
+        TOGGLELED(LED1_PORT);
         // 2.5V output with 2000ms delay
         dac_output_voltage(2.5f);
         global_counter = 0;
         while(global_counter < 4){}
-        
+        TOGGLELED(LED1_PORT);
         // 3.5V output with 1000ms delay
         dac_output_voltage(3.5f);
         global_counter = 0;
         while(global_counter < 2){}
+        TOGGLELED(LED1_PORT);
     }
     
 }
