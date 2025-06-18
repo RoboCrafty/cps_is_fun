@@ -5,7 +5,7 @@ clc, clearvars, close all
 %% 1) Read Data
 % Load the provided signal 'signal.csv' using the 'csvread()' function and
 % split the signal and time into two separate vectors.
-data =readmatrix('signal3.xlsx');
+data =readmatrix('signal.csv');
 fprintf('1) Start.\n')
 
 signal= data(:,2);
