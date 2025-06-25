@@ -30,9 +30,9 @@
 #define DAC_SCK_AD1CFG AD1PCFGLbits.PCFG11
 #define DAC_LDAC_AD1CFG AD1PCFGLbits.PCFG13
 
-//#define DAC_SDI_AD2CFG AD2PCFGLbits.PCFG10
-//#define DAC_SCK_AD2CFG AD2PCFGLbits.PCFG11
-//#define DAC_LDAC_AD2CFG AD2PCFGLbits.PCFG13
+#define DAC_SDI_AD2CFG AD2PCFGLbits.PCFG10
+#define DAC_SCK_AD2CFG AD2PCFGLbits.PCFG11
+#define DAC_LDAC_AD2CFG AD2PCFGLbits.PCFG13
 
 /**
  * Initialize DAC pins and set initial states.
@@ -45,9 +45,9 @@ void dac_initialize()
     SETBIT(DAC_SDI_AD1CFG);
     SETBIT(DAC_SCK_AD1CFG);
     SETBIT(DAC_LDAC_AD1CFG);
-    SETBIT(DAC_SDI_AD2CFG);
-    SETBIT(DAC_SCK_AD2CFG);
-    SETBIT(DAC_LDAC_AD2CFG);
+    //SETBIT(DAC_SDI_AD2CFG);
+    //SETBIT(DAC_SCK_AD2CFG);
+    //SETBIT(DAC_LDAC_AD2CFG);
 
     // Configure pins as outputs
     CLEARBIT(DAC_CS_TRIS);    // CS pin output
