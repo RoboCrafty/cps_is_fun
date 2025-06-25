@@ -39,7 +39,7 @@ fprintf('2) Start.\n')
 Wp= 30/2500; %pass band freq
 Ws= 200/2500; %stop band freq
 Ap= 3; %pass band attenuation
-As= 30; %stopband attenuation
+As= 40; %stopband attenuation
 
 [n, Wn] = buttord(Wp, Ws, Ap, As);
 disp(n);
@@ -105,7 +105,7 @@ f = (-N/2:N/2-1)*(Fs/N);  % Frequency axis in Hz
 figure(2)
 plot(f,FT_signal);
 xlabel('frequency');
-xlim([-250 250]);
+xlim([0 500]);
 ylabel('FFT');
 grid on
 hold on
