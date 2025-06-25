@@ -30,9 +30,9 @@
 #define DAC_SCK_AD1CFG AD1PCFGLbits.PCFG11
 #define DAC_LDAC_AD1CFG AD1PCFGLbits.PCFG13
 
-#define DAC_SDI_AD2CFG AD2PCFGLbits.PCFG10
-#define DAC_SCK_AD2CFG AD2PCFGLbits.PCFG11
-#define DAC_LDAC_AD2CFG AD2PCFGLbits.PCFG13
+//#define DAC_SDI_AD2CFG AD2PCFGLbits.PCFG10
+//#define DAC_SCK_AD2CFG AD2PCFGLbits.PCFG11
+//#define DAC_LDAC_AD2CFG AD2PCFGLbits.PCFG13
 
 /**
  * Initialize DAC pins and set initial states.
@@ -201,13 +201,13 @@ void main_loop()
         dac_output_voltage(1.0f);
         global_counter = 0;
         while(global_counter < 1) {} // wait 0.5s (1 * 0.5s)
-        TOGGLELED(LED1_PORT);
+        
 
         // Output 2.5V, wait ~2s, toggle LED1
         dac_output_voltage(2.5f);
         global_counter = 0;
         while(global_counter < 4) {} // wait 2.0s (4 * 0.5s)
-        TOGGLELED(LED1_PORT);
+        
 
         // Output 3.5V, wait ~1s, toggle LED1
         dac_output_voltage(3.5f);
