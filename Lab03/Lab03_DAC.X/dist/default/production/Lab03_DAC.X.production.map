@@ -146,11 +146,11 @@ section                    address   length (PC units)   length (bytes) (dec)
 -------                    -------   -----------------   --------------------
 .text                        0x200              0x11ca          0x1aaf  (6831)
 .const                      0x13ca                0x1e            0x2d  (45)
-.text                       0x13e8               0x54c           0x7f2  (2034)
-.dinit                      0x1934                0xc8           0x12c  (300)
-.text                       0x19fc                0x3c            0x5a  (90)
+.text                       0x13e8               0x518           0x7a4  (1956)
+.dinit                      0x1900                0xc8           0x12c  (300)
+.text                       0x19c8                0x3c            0x5a  (90)
 
-                 Total "program" memory used (bytes):         0x2454  (9300) 3%
+                 Total "program" memory used (bytes):         0x2406  (9222) 3%
 
 
 "data" Memory  [Origin = 0x800, Length = 0x7800]
@@ -289,8 +289,8 @@ External Symbols in Program Memory (by address):
                   0x0017c6                  _dac_output_voltage
                   0x001844                  _timer_initialize
                   0x001880                  _main_loop
-                  0x0019fc                  _main
-                  0x001a1e                  _led_initialize
+                  0x0019c8                  _main
+                  0x0019ea                  _led_initialize
 
 External Symbols in Program Memory (by name):
 
@@ -360,8 +360,8 @@ External Symbols in Program Memory (by name):
                   0x001412                  _lcd_send
                   0x00145c                  _lcd_send_cmd
                   0x00143c                  _lcd_send_str
-                  0x001a1e                  _led_initialize
-                  0x0019fc                  _main
+                  0x0019ea                  _led_initialize
+                  0x0019c8                  _main
                   0x001880                  _main_loop
                   0x000aa8                  _malloc
                   0x000668                  _memchr
@@ -2085,7 +2085,7 @@ __c30_signature
 .const              0x93ca         0x1e load address 0x0013ca  
  .const             0x93ca         0x1e build/default/production/src/lab03.o
 
-.text             0x0013e8        0x54c
+.text             0x0013e8        0x518
  .text            0x0013e8        0x36e lib/libLCD.a(lcd.o)
                   0x0013e8                  lcd_initialize
                   0x00140c                  lcd_check_flow_control
@@ -2113,18 +2113,18 @@ __c30_signature
                   0x0016cc                  drawData
                   0x001720                  gotoPosition
                   0x001744                  gotoLine
- .text            0x001756        0x1de build/default/production/src/lab03.o
+ .text            0x001756        0x1aa build/default/production/src/lab03.o
                   0x001756                  dac_initialize
                   0x001778                  dac_write
                   0x0017c6                  dac_output_voltage
                   0x001844                  timer_initialize
                   0x001880                  main_loop
 
-.dinit            0x001934         0xc8
- .dinit           0x001934         0xc8 data_init
+.dinit            0x001900         0xc8
+ .dinit           0x001900         0xc8 data_init
 
-.text             0x0019fc         0x3c
- .text            0x0019fc         0x22 build/default/production/src/main.o
-                  0x0019fc                  main
- .text            0x001a1e         0x1a build/default/production/src/led.o
-                  0x001a1e                  led_initialize
+.text             0x0019c8         0x3c
+ .text            0x0019c8         0x22 build/default/production/src/main.o
+                  0x0019c8                  main
+ .text            0x0019ea         0x1a build/default/production/src/led.o
+                  0x0019ea                  led_initialize

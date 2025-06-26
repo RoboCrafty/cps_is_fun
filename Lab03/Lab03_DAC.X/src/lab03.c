@@ -45,9 +45,9 @@ void dac_initialize()
     SETBIT(DAC_SDI_AD1CFG);
     SETBIT(DAC_SCK_AD1CFG);
     SETBIT(DAC_LDAC_AD1CFG);
-    //SETBIT(DAC_SDI_AD2CFG);
-    //SETBIT(DAC_SCK_AD2CFG);
-    //SETBIT(DAC_LDAC_AD2CFG);
+    SETBIT(DAC_SDI_AD2CFG);
+    SETBIT(DAC_SCK_AD2CFG);
+    SETBIT(DAC_LDAC_AD2CFG);
 
     // Configure pins as outputs
     CLEARBIT(DAC_CS_TRIS);    // CS pin output
