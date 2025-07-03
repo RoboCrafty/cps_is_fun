@@ -58,17 +58,6 @@ void set_duty_cycle(char servo_number, float duty_cycle){
     }
 }
 
-void touchscreen_init()
-{
-    
-}
-
-
-    
-    
-    
-
-
 
 
 #define TCKPS_1   0x00
@@ -81,10 +70,41 @@ void touchscreen_init()
 #define PWM_MAX_US 2000
 #define PWM_CYC_US 20000
 
-/*
- * touch screen code
- */
 
+
+void touchscreen_init()
+{
+    CLEARBIT(AD1CON1bits.ADON);
+    //initialize PIN
+    SETBIT(TRISEbits.TRISB15); // Set TRISE RE15 to input
+    CLEARBIT(AD1PCFGHbits.PCFG15); // Set AD1 AN20 input pin as analog
+    
+    SETBIT(TRISEbits.TRISB9); // Set TRISE RE9 to input
+    CLEARBIT(AD1PCFGHbits.PCFG9); // Set AD1 AN20 input pin as analog
+    //Configure AD1CON1
+    CLEARBIT(AD1CON1bits.AD12B); // Set 10b Operation Mode
+    AD1CON1bits.FORM = 0; // Set integer output
+    AD1CON1bits.SSRC = 0x7; // Set automatic conversion
+    // Configure AD1CON2
+    AD1CON2 = 0; // Not using scanning sampling
+    //Configure AD1CON3
+    CLEARBIT(AD1CON3bits.ADRC); // Internal clock source
+    AD1CON3bits.SAMC = 0x1F; // Sample-to-conversion clock = 31Tad
+    AD1CON3bits.ADCS = 0x2; // Tad = 3Tcy (Time cycles)
+    // Leave AD1CON4 at its default value
+    // Enable ADC
+    SETBIT(AD1CON1bits.ADON);
+    
+   
+    
+}
+
+void dimention_touchscreen(char touchscreen_dimention){
+    AD1CHS0bits.CH0SA = 0x014; // Set ADC to Sample AN20 pin
+    SETBIT(AD1CON1bits.SAMP); // Start to sample
+    while(!AD1CON1bits.DONE); // Wait for conversion to finish
+    CLEARBIT(AD1CON1bits.DONE); // MUST HAVE! Clear conversion done bit
+}
 
 /*
  * main loop
