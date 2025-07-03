@@ -1,7 +1,7 @@
 #include "lab05.h"
 
 #include <xc.h>
-//do not change the order of the following 2 definitions
+// Do not change the order of the following 2 definitions
 #define FCY 12800000UL
 #include <libpic30.h>
 
@@ -11,192 +11,224 @@
 
 volatile uint16_t x_touchscreen;
 volatile uint16_t y_touchscreen;
-volatile char dimention;
+volatile char dimensionB;
 
+/**
+ * @brief Initialize the servo PWM signals
+ * @param servo_number 'X' or 'Y' to select the servo
+ */
+void servo_init(char servo_number) {
+    CLEARBIT(T2CONbits.TON);    // Disable Timer2
+    CLEARBIT(T2CONbits.TCS);    // Select internal instruction cycle clock
+    CLEARBIT(T2CONbits.TGATE);  // Disable Gated Timer mode
+    TMR2 = 0x00;                // Clear Timer2 register
+    T2CONbits.TCKPS = 0b10;     // Select 1:64 Prescaler
+    CLEARBIT(IFS0bits.T2IF);    // Clear Timer2 interrupt flag
+    CLEARBIT(IEC0bits.T2IE);    // Disable Timer2 interrupt
+    PR2 = 4000;                 // Set Timer2 period for 20 ms (PWM period)
 
-void servo_init(char servo_number){
-    CLEARBIT(T2CONbits.TON); // Disable Timer
-    CLEARBIT(T2CONbits.TCS); // Select internal instruction cycle clock
-    CLEARBIT(T2CONbits.TGATE); // Disable Gated Timer mode
-    TMR2 = 0x00; // Clear timer register
-    T2CONbits.TCKPS = 0b10; // Select 1:64 Prescaler
-    CLEARBIT(IFS0bits.T2IF); // Clear Timer2 interrupt status flag
-    CLEARBIT(IEC0bits.T2IE); // Disable Timer2 interrupt enable control bit
-    PR2 = 4000; // Set timer period 20 ms:
-        // 8000 = 40*10^-3 * 12.8*10^6 * 1/64
-    
-    if (servo_number == 'X')
-    {
-        // Setup OC8
-        CLEARBIT(TRISDbits.TRISD7); // Set OC8 as output
-        OC8R = 4000-1.75*200; // Set the initial duty cycle to 1.5 ms
-        lcd_printf("XDD" );
-        OC8RS = 4000-1.75*200; // Load OCRS: next pwm duty cycle
-        OC8CON = 0x0006; // Set OC8: PWM, no fault check, Timer2
-        
-        
+    if (servo_number == 'X') {
+        // Setup OC8 for X servo PWM output
+        CLEARBIT(TRISDbits.TRISD7); // Set OC8 pin as output
+        OC8R = 4000 - (1.75 * 200); // Initial duty cycle (~1.75 ms pulse)
+        OC8RS = 4000 - (1.75 * 200); // Next PWM duty cycle
+        OC8CON = 0x0006;             // OC8 in PWM mode, no fault check, Timer2 as clock source
     }
-    else if (servo_number == 'Y')
-    {
-    
-        // Setup OC7
-        CLEARBIT(TRISDbits.TRISD6); // Set OC7 as output
-        OC7R = 4000-1.5*200; // Set the initial duty cycle to 5 ms
-        OC7RS = 4000-1.5*200; // Load OCRS: next pwm duty cycle
-        OC7CON = 0x0006; // Set OC7: PWM, no fault check, Timer1
-        
+    else if (servo_number == 'Y') {
+        // Setup OC7 for Y servo PWM output
+        CLEARBIT(TRISDbits.TRISD6); // Set OC7 pin as output
+        OC7R = 4000 - (1.5 * 200);  // Initial duty cycle (~1.5 ms pulse)
+        OC7RS = 4000 - (1.5 * 200); // Next PWM duty cycle
+        OC7CON = 0x0006;            // OC7 in PWM mode, no fault check, Timer2 as clock source
     }
-    SETBIT(T2CONbits.TON); // Turn Timer 1 on    
- }   
-    
-void set_duty_cycle(char servo_number, float duty_cycle){
-    if (servo_number == 'X')
-    {
-        OC8RS=4000-(duty_cycle*200);
+
+    SETBIT(T2CONbits.TON);  // Enable Timer2
+}
+
+/**
+ * @brief Set the PWM duty cycle for the specified servo
+ * @param servo_number 'X' or 'Y'
+ * @param duty_cycle Duty cycle in milliseconds (e.g., 1.5 for 1.5 ms pulse)
+ */
+void set_duty_cycle(char servo_number, float duty_cycle) {
+    if (servo_number == 'X') {
+        OC8RS = 4000 - (duty_cycle * 200);
     }
-    else if (servo_number == 'Y')
-    {
-        OC7RS=4000-(duty_cycle*200);
+    else if (servo_number == 'Y') {
+        OC7RS = 4000 - (duty_cycle * 200);
     }
 }
 
+/**
+ * @brief Initialize the touchscreen hardware and ADC
+ */
+void touchscreen_init() {
+    CLEARBIT(AD1CON1bits.ADON);  // Disable ADC before configuration
 
+    // Configure touchscreen input pins as analog inputs
+    SETBIT(TRISBbits.TRISB15);    // Set RB15 as input (AN15)
+    CLEARBIT(AD1PCFGLbits.PCFG15); // Configure RB15 as analog
+    SETBIT(TRISBbits.TRISB9);     // Set RB9 as input (AN9)
+    CLEARBIT(AD1PCFGLbits.PCFG9);  // Configure RB9 as analog
 
-#define TCKPS_1   0x00
-#define TCKPS_8   0x01
-#define TCKPS_64  0x02
-#define TCKPS_256 0x03
-
-#define PWM_MIN_US 1000
-#define PWM_MID_US 1500
-#define PWM_MAX_US 2000
-#define PWM_CYC_US 20000
-
-
-
-void touchscreen_init()
-{
-    CLEARBIT(AD1CON1bits.ADON);
-    //initialize PIN
-    SETBIT(TRISEbits.TRISB15); // Set TRISE RE15 to input
-    CLEARBIT(AD1PCFGHbits.PCFG15); // Set AD1 AN20 input pin as analog
+    // ADC Configuration
+    CLEARBIT(AD1CON1bits.AD12B);  // 10-bit operation mode
+    AD1CON1bits.FORM = 0;         // Integer output format
+    AD1CON1bits.SSRC = 0x7;       // Auto-conversion mode (auto start conversion)
     
-    SETBIT(TRISEbits.TRISB9); // Set TRISE RE9 to input
-    CLEARBIT(AD1PCFGHbits.PCFG9); // Set AD1 AN20 input pin as analog
-    //Configure AD1CON1
-    CLEARBIT(AD1CON1bits.AD12B); // Set 10b Operation Mode
-    AD1CON1bits.FORM = 0; // Set integer output
-    AD1CON1bits.SSRC = 0x7; // Set automatic conversion
-    // Configure AD1CON2
-    AD1CON2 = 0; // Not using scanning sampling
-    //Configure AD1CON3
-    CLEARBIT(AD1CON3bits.ADRC); // Internal clock source
-    AD1CON3bits.SAMC = 0x1F; // Sample-to-conversion clock = 31Tad
-    AD1CON3bits.ADCS = 0x2; // Tad = 3Tcy (Time cycles)
-    // Leave AD1CON4 at its default value
+    AD1CON2 = 0;                  // No scanning, use MUX A only
+    
+    CLEARBIT(AD1CON3bits.ADRC);   // Use internal clock
+    AD1CON3bits.SAMC = 0x1F;      // Sample time = 31 Tad
+    AD1CON3bits.ADCS = 0x2;       // Tad = 3*Tcy (instruction cycles)
+
     // Enable ADC
     SETBIT(AD1CON1bits.ADON);
-    
-     // Set up the I/O pins E1, E2, E3 to be output pins
-    CLEARBIT(TRISEbits.TRISE1); // I/O pin set to output
-    CLEARBIT(TRISEbits.TRISE2); // I/O pin set to output
-    CLEARBIT(TRISEbits.TRISE3); // I/O pin set to output
-    // Set up the I/O pins E1, E2, E3 so that the touchscreen is in Standby Mode and connects to ADC
+
+    // Configure PORTE pins E1, E2, E3 as outputs for touchscreen control
+    CLEARBIT(TRISEbits.TRISE1);
+    CLEARBIT(TRISEbits.TRISE2);
+    CLEARBIT(TRISEbits.TRISE3);
+
+    // Set initial touchscreen control pins to standby mode
     SETBIT(PORTEbits.RE1);
     SETBIT(PORTEbits.RE2);
     CLEARBIT(PORTEbits.RE3);
-    
 }
 
-void touchscreen_dimension(char dimension)  //dimention = X or Y, I have set it as global because i need it in the next function
-{
-
-
-    if (dimention == 'X'){
-            CLEARBIT(PORTEbits.RE1); //to decide this i have checked tab5 and tab6 in lab manual
-            SETBIT(PORTEbits.RE2);
-            SETBIT(PORTEbits.RE3); 
-    }
-  
-    if (dimention == 'Y'){
-            SETBIT(PORTEbits.RE1);
-            CLEARBIT(PORTEbits.RE2);
-            CLEARBIT(PORTEbits.RE3); 
-    }
-}    
-    
-    
-float touchscreen_read()
-{
-    if (dimension == 'X') {
-        AD1CHS0bits.CH0SA = 15; // AN15 = A15
-    } else if (dimension == 'Y') {
-        AD1CHS0bits.CH0SA = 9;  // AN9 = A9
-    }
-
-    AD1CON1bits.SAMP = 1;         // Start sampling
-    __delay_us(10);               // Wait 10 us for sampling
-    AD1CON1bits.SAMP = 0;         // Start conversion
-    while (!AD1CON1bits.DONE);    // Wait until conversion is done
-    CLEARBIT(AD1CON1bits.DONE);   // MUST HAVE! Clear conversion done bit
-    return ADC1BUF0;              // Return result (0â1023)
-}
-
-/*
- * main loop
+/**
+ * @brief Set the touchscreen measurement dimension (X or Y)
+ * @param dimension 'X' or 'Y'
  */
+void touchscreen_dimension(char dimension) {
+    if (dimension == 'X') {
+        CLEARBIT(PORTEbits.RE1);
+        Nop();
+        SETBIT(PORTEbits.RE2);
+        Nop();
+        SETBIT(PORTEbits.RE3);
+        Nop();
+    }
+    else if (dimension == 'Y') {
+        SETBIT(PORTEbits.RE1);
+        Nop();
+        CLEARBIT(PORTEbits.RE2);
+        Nop();
+        CLEARBIT(PORTEbits.RE3);
+        Nop();
+    }
+}
 
-void main_loop()
-{
-    // print assignment information
+/**
+ * @brief Read the touchscreen ADC value for the current dimension
+ * @return ADC reading (0 - 1023)
+ */
+double touchscreen_read() {
+    __delay_ms(10); // Small delay for stabilization
+
+    if (dimensionB == 'X') {
+        AD1CHS0bits.CH0SA = 0x0F; // Select AN15 for X dimension reading
+    }
+    else if (dimensionB == 'Y') {
+        AD1CHS0bits.CH0SA = 0x09; // Select AN9 for Y dimension reading
+    }
+
+    __delay_ms(10); // Allow channel to stabilize
+    
+    SETBIT(AD1CON1bits.SAMP);  // Start sampling
+    AD1CON1bits.SAMP = 0;      // Start conversion
+    
+    while (!AD1CON1bits.DONE); // Wait until conversion completes
+    CLEARBIT(AD1CON1bits.DONE); // Clear the done flag
+    
+    return ADC1BUF0;           // Return ADC value (0-1023)
+}
+
+/**
+ * @brief Main program loop
+ */
+void main_loop() {
+    // Display initial information
     lcd_printf("Lab05: Touchscreen &\r\n");
     lcd_printf("       Servos");
     lcd_locate(0, 2);
-    lcd_printf("Group: GroupName");
+    lcd_printf("Group: CPS19");
     
+    // Initialize servos and touchscreen
     servo_init('X');
     servo_init('Y');
-    
     touchscreen_init();
 
-    float X, Y;
+    double Xval = 0.0;
+    double Yval = 0.0;
 
-    
-    while(TRUE) {
+    while (TRUE) {
+        // Position 1
+        set_duty_cycle('X', 1.4);
+        set_duty_cycle('Y', 1.2);
+        __delay_ms(2000);
 
-    touchscreen_dimension('X');
-    X = touchscreen_read();
-    touchscreen_dimension('Y');
-    X = touchscreen_read();
+        touchscreen_dimension('X');
+        dimensionB = 'X';
+        Xval = touchscreen_read();
 
-    lcd_locate(0, 5);
-    lcd_printf("Ball Position (X,Y) = (%.2f,%.2f)", X, Y);
+        touchscreen_dimension('Y');
+        dimensionB = 'Y';
+        Yval = touchscreen_read();
 
-    __delay_ms(100);
-    
+        lcd_locate(0, 5);
+        lcd_printf("Ball Position (X,Y) = (%.2f, %.2f)", Xval, Yval);
+        __delay_ms(3000);
 
-     /* set_duty_cycle('X',1.4);    
-     set_duty_cycle('Y',1.2); 
-     
-     __delay_ms(5000);
-     
-     set_duty_cycle('X',1.4);    
-     set_duty_cycle('Y',1.7); 
-     
-     __delay_ms(5000);
-     
-     set_duty_cycle('X',2.0);    
-     set_duty_cycle('Y',1.7); 
-     
-     __delay_ms(5000);
-     
-     set_duty_cycle('X',2.0);    
-     set_duty_cycle('Y',1.2); 
-     
-     __delay_ms(5000);
-     */
-    }      
+        // Position 2
+        set_duty_cycle('X', 1.4);
+        set_duty_cycle('Y', 1.7);
+        __delay_ms(2000);
 
-        
-    
+        touchscreen_dimension('X');
+        dimensionB = 'X';
+        Xval = touchscreen_read();
+
+        touchscreen_dimension('Y');
+        dimensionB = 'Y';
+        Yval = touchscreen_read();
+
+        lcd_locate(0, 5);
+        lcd_printf("Ball Position (X,Y) = (%.2f, %.2f)", Xval, Yval);
+        __delay_ms(3000);
+
+        // Position 3
+        set_duty_cycle('X', 2.0);
+        set_duty_cycle('Y', 1.7);
+        __delay_ms(2000);
+
+        touchscreen_dimension('X');
+        dimensionB = 'X';
+        Xval = touchscreen_read();
+
+        touchscreen_dimension('Y');
+        dimensionB = 'Y';
+        Yval = touchscreen_read();
+
+        lcd_locate(0, 5);
+        lcd_printf("Ball Position (X,Y) = (%.2f, %.2f)", Xval, Yval);
+        __delay_ms(3000);
+
+        // Position 4
+        set_duty_cycle('X', 2.0);
+        set_duty_cycle('Y', 1.2);
+        __delay_ms(2000);
+
+        touchscreen_dimension('X');
+        dimensionB = 'X';
+        Xval = touchscreen_read();
+
+        touchscreen_dimension('Y');
+        dimensionB = 'Y';
+        Yval = touchscreen_read();
+
+        lcd_locate(0, 5);
+        lcd_printf("Ball Position (X,Y) = (%.2f, %.2f)", Xval, Yval);
+        __delay_ms(3000);
+    }
 }
