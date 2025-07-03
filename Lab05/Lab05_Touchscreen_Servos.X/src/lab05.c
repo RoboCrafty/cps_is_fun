@@ -9,9 +9,11 @@
 #include "lcd.h"
 #include "led.h"
 
-/*
- * PWM code
- */
+volatile uint16_t x_touchscreen;
+volatile uint16_t y_touchscreen;
+volatile char dimention;
+
+
 void servo_init(char servo_number){
     CLEARBIT(T2CONbits.TON); // Disable Timer
     CLEARBIT(T2CONbits.TCS); // Select internal instruction cycle clock
@@ -95,15 +97,49 @@ void touchscreen_init()
     // Enable ADC
     SETBIT(AD1CON1bits.ADON);
     
-   
+     // Set up the I/O pins E1, E2, E3 to be output pins
+    CLEARBIT(TRISEbits.TRISE1); // I/O pin set to output
+    CLEARBIT(TRISEbits.TRISE2); // I/O pin set to output
+    CLEARBIT(TRISEbits.TRISE3); // I/O pin set to output
+    // Set up the I/O pins E1, E2, E3 so that the touchscreen is in Standby Mode and connects to ADC
+    SETBIT(PORTEbits.RE1);
+    SETBIT(PORTEbits.RE2);
+    CLEARBIT(PORTEbits.RE3);
     
 }
 
-void dimention_touchscreen(char touchscreen_dimention){
-    AD1CHS0bits.CH0SA = 0x014; // Set ADC to Sample AN20 pin
-    SETBIT(AD1CON1bits.SAMP); // Start to sample
-    while(!AD1CON1bits.DONE); // Wait for conversion to finish
-    CLEARBIT(AD1CON1bits.DONE); // MUST HAVE! Clear conversion done bit
+void touchscreen_dimension(char dimension)  //dimention = X or Y, I have set it as global because i need it in the next function
+{
+
+
+    if (dimention == 'X'){
+            CLEARBIT(PORTEbits.RE1); //to decide this i have checked tab5 and tab6 in lab manual
+            SETBIT(PORTEbits.RE2);
+            SETBIT(PORTEbits.RE3); 
+    }
+  
+    if (dimention == 'Y'){
+            SETBIT(PORTEbits.RE1);
+            CLEARBIT(PORTEbits.RE2);
+            CLEARBIT(PORTEbits.RE3); 
+    }
+}    
+    
+    
+float touchscreen_read()
+{
+    if (dimension == 'X') {
+        AD1CHS0bits.CH0SA = 15; // AN15 = A15
+    } else if (dimension == 'Y') {
+        AD1CHS0bits.CH0SA = 9;  // AN9 = A9
+    }
+
+    AD1CON1bits.SAMP = 1;         // Start sampling
+    __delay_us(10);               // Wait 10 us for sampling
+    AD1CON1bits.SAMP = 0;         // Start conversion
+    while (!AD1CON1bits.DONE);    // Wait until conversion is done
+    CLEARBIT(AD1CON1bits.DONE);   // MUST HAVE! Clear conversion done bit
+    return ADC1BUF0;              // Return result (0â1023)
 }
 
 /*
@@ -121,11 +157,25 @@ void main_loop()
     servo_init('X');
     servo_init('Y');
     
-    
+    touchscreen_init();
+
+    float X, Y;
 
     
     while(TRUE) {
-     set_duty_cycle('X',1.4);    
+
+    touchscreen_dimension('X');
+    X = touchscreen_read();
+    touchscreen_dimension('Y');
+    X = touchscreen_read();
+
+    lcd_locate(0, 5);
+    lcd_printf("Ball Position (X,Y) = (%.2f,%.2f)", X, Y);
+
+    __delay_ms(100);
+    
+
+     /* set_duty_cycle('X',1.4);    
      set_duty_cycle('Y',1.2); 
      
      __delay_ms(5000);
@@ -144,6 +194,9 @@ void main_loop()
      set_duty_cycle('Y',1.2); 
      
      __delay_ms(5000);
+     */
+    }      
+
         
-    }
+    
 }
