@@ -164,7 +164,7 @@ void main_loop() {
 
     while (TRUE) {
         // Position 1
-        set_duty_cycle('X', 1.4);
+        set_duty_cycle('X', 1.0);
         set_duty_cycle('Y', 1.2);
         __delay_ms(2000);
 
@@ -216,7 +216,7 @@ void main_loop() {
 
         // Position 4
         set_duty_cycle('X', 2.0);
-        set_duty_cycle('Y', 1.2);
+        set_duty_cycle('Y', 1.0);
         __delay_ms(2000);
 
         touchscreen_dimension('X');
