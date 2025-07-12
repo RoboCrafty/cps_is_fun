@@ -28,10 +28,12 @@
 #define TCKPS_64  0x02
 #define TCKPS_256 0x03
 
-#define radius 125 
-#define center_x 385
-#define center_y 340
-#define speed //????
+#define CIRCLE_RADIUS 70.0f
+#define CIRCLE_SPEED -3.0f         // radians per second
+#define PI 3.1415926f
+#define center_x 500
+#define center_y 235
+
 
 
 
@@ -49,6 +51,7 @@ int missed_deadline= 0;
 int md_counter=0;
 float x_filtered = 400.0f;
 float y_filtered = 400.0f;
+float t_seconds = 0.0f;
 
 
 
@@ -217,8 +220,8 @@ double touchscreen_read() {
 /*
  * PD Controller
  */
-float Kp = 1.0f;
-float Kd = .10f;
+float Kp = 0.9f;
+float Kd = 0.5f;
 
 float prev_x_error = 0, prev_y_error = 0;
 
@@ -234,10 +237,10 @@ float compute_pd(float target, float actual, float* prev_error) {
  * Clamping and Mapping Functions
 */
 
-#define SERVO_CENTER 1.7f
+#define SERVO_CENTER 1.5f
 #define SERVO_MIN 0.7f
 #define SERVO_MAX 2.2f
-#define MAX_U 1000.0f
+#define MAX_U 700.0f
 
 float clamp(float val, float min, float max) {
     if (val < min) return min;
@@ -323,8 +326,12 @@ void main_loop()
             update_filter(x_raw, y_raw, false);
                
             // Compute PD control signals
-            float pd_x = compute_pd(center_x, x_filtered, &prev_x_error);
-            float pd_y = compute_pd(center_y, y_filtered, &prev_y_error);
+            float x_target = center_x + CIRCLE_RADIUS * cosf(CIRCLE_SPEED * t_seconds);
+            float y_target = center_y + CIRCLE_RADIUS * sinf(CIRCLE_SPEED * t_seconds);
+
+            // Compute PD control signalsL
+            float pd_x = compute_pd(x_target, x_filtered, &prev_x_error);
+            float pd_y = compute_pd(y_target, y_filtered, &prev_y_error);
             
             // Map PD outputs to servo angles
             x_pwm = map_pd_to_pwm(pd_x);
@@ -335,6 +342,7 @@ void main_loop()
 
             // Reset counter
             counter = 0;
+            t_seconds += 0.02f;
 
             touchscreen_dimension('X');
             dimensionB = 'X';
