@@ -11,6 +11,7 @@
 #include "types.h"
 #include "lcd.h"
 #include "led.h"
+#include <stdbool.h>
 
 
 /*
@@ -43,6 +44,7 @@ volatile char dimensionB;
 int counter = -1;
 double x_raw = 0.0;
 double y_raw = 0.0;
+
 int missed_deadline= 0;
 int md_counter=0;
 float x_filtered = 400.0f;
@@ -191,7 +193,7 @@ void touchscreen_dimension(char dimension) {
  * @return ADC reading (0 - 1023)
  */
 double touchscreen_read() {
-    __delay_ms(10); // Small delay for stabilization
+   
 
     if (dimensionB == 'X') {
         AD1CHS0bits.CH0SA = 0x0F; // Select AN15 for X dimension reading
@@ -200,7 +202,7 @@ double touchscreen_read() {
         AD1CHS0bits.CH0SA = 0x09; // Select AN9 for Y dimension reading
     }
 
-    __delay_ms(10); // Allow channel to stabilize
+    
     
     SETBIT(AD1CON1bits.SAMP);  // Start sampling
     AD1CON1bits.SAMP = 0;      // Start conversion
@@ -215,14 +217,14 @@ double touchscreen_read() {
 /*
  * PD Controller
  */
-float Kp = 0.02f;
-float Kd = 0.08f;
+float Kp = 1.0f;
+float Kd = .10f;
 
 float prev_x_error = 0, prev_y_error = 0;
 
 float compute_pd(float target, float actual, float* prev_error) {
     float error = target - actual;
-    float d_error = (error - *prev_error) / (CONTROL_LOOP_PERIOD_MS / 1000.0f);
+    float d_error = (error - *prev_error) / (20 / 1000.0f);
     *prev_error = error;
 
     return Kp * error + Kd * d_error;
@@ -232,10 +234,10 @@ float compute_pd(float target, float actual, float* prev_error) {
  * Clamping and Mapping Functions
 */
 
-#define SERVO_CENTER 1.45f
-#define SERVO_MIN 1.1f
-#define SERVO_MAX 1.9f
-#define MAX_U 5.0f
+#define SERVO_CENTER 1.7f
+#define SERVO_MIN 0.7f
+#define SERVO_MAX 2.2f
+#define MAX_U 1000.0f
 
 float clamp(float val, float min, float max) {
     if (val < min) return min;
@@ -262,12 +264,12 @@ void update_servos(float x_pwm, float y_pwm) {
 /*
  * Butterworth Filter N=1, Cutoff 3 Hz, sampling @ 50 Hz
  */
-
+#define ALPHA 0.1586f
 void update_filter(uint16_t x_raw, uint16_t y_raw, bool is_x) {
     if (is_x)
-        x_filtered = ALPHA * x_raw + (1.0f - ALPHA) * x_filtered;
+        x_filtered = (ALPHA * x_raw + (1.0f - ALPHA) * x_filtered);
     else
-        y_filtered = ALPHA * y_raw + (1.0f - ALPHA) * y_filtered;
+        y_filtered = (ALPHA * y_raw + (1.0f - ALPHA) * y_filtered);
 }
 
 
@@ -293,8 +295,12 @@ void main_loop()
 
     while (TRUE) 
     {
+        /* lcd_locate(0, 5);
+            lcd_printf("Ball Position (X,Y) = (%.2f, %.2f)", x_raw, y_raw);
+ */
         switch (counter)
         {
+            
         case 0:
             touchscreen_dimension('X');
             dimensionB = 'X';
@@ -306,13 +312,16 @@ void main_loop()
             touchscreen_dimension('Y');
             dimensionB = 'Y';
             y_raw = touchscreen_read();
+            
             break;
 
         case 2:
+          /*   lcd_locate(0, 5);
+            lcd_printf("cOUNTER IS : %d", counter); */
             // Update the filter with the raw values
             update_filter(x_raw, y_raw, true);
             update_filter(x_raw, y_raw, false);
-
+               
             // Compute PD control signals
             float pd_x = compute_pd(center_x, x_filtered, &prev_x_error);
             float pd_y = compute_pd(center_y, y_filtered, &prev_y_error);
@@ -326,8 +335,16 @@ void main_loop()
 
             // Reset counter
             counter = 0;
+
+            touchscreen_dimension('X');
+            dimensionB = 'X';
+            x_raw = touchscreen_read();
+
+        
             break;
         }
+
+        
     }
 
 
