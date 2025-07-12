@@ -47,6 +47,7 @@ int missed_deadline= 0;
 int md_counter=0;
 
 
+
 /*
  * Timer Code
  */
@@ -88,20 +89,7 @@ void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T1Interrupt(void)
     
     CLEARBIT(IFS0bits.T1IF);   // Clear interrupt flag
 }
-void initialize_timer3()
-{
-    CLEARBIT(T3CONbits.TON); // disable the timer
-    T3CONbits.TCKPS = 0b11; // 1:256 prescalar
-    CLEARBIT(T3CONbits.TCS); // Select internal instruction cycle clock
-    CLEARBIT(T3CONbits.TGATE); // disable gated timer mode
-    PR3 = 1000; 
-    
-    TMR3 = 0x00;
-    IPC0bits.T3IP = 0x06; // set priority level: here is set to one but we have to decide
-    IFS0bits.T3IF = 0; //clear flag
-    IEC0bits.T3IE = 1; //enable interrupt 
-    T3CONbits.TON = 1; // start the timer
-}
+
 
 void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T3Interrupt(void)
 {
@@ -115,12 +103,11 @@ void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T3Interrupt(void)
 
 
 
-/*
- * Servo Code
+/**
+ * @brief Initialize the servo PWM signals
+ * @param servo_number 'X' or 'Y' to select the servo
  */
-/*
- * Touch screen code
- */
+
 void servo_init(char servo_number) {
     CLEARBIT(T2CONbits.TON);    // Disable Timer2
     CLEARBIT(T2CONbits.TCS);    // Select internal instruction cycle clock
@@ -282,7 +269,21 @@ void main_loop()
     touchscreen_init();
 
 
-    while (TRUE) {
+    while (TRUE) 
+    {
+        if(counter%2==0)
+        {
+            touchscreen_dimension('X');
+            dimensionB = 'X';
+            Xval = touchscreen_read();
+        }
+        else
+        {
+            touchscreen_dimension('Y');
+            dimensionB = 'Y';
+            Yval = touchscreen_read();
+        }
+    }
 
 
        
