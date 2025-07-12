@@ -40,11 +40,13 @@
 volatile uint16_t x_touchscreen;
 volatile uint16_t y_touchscreen;
 volatile char dimensionB;
-int counter = 0;
-double X_val = 0.0;
-double Y_val = 0.0;
+int counter = -1;
+double x_raw = 0.0;
+double y_raw = 0.0;
 int missed_deadline= 0;
 int md_counter=0;
+float x_filtered = 400.0f;
+float y_filtered = 400.0f;
 
 
 
@@ -68,40 +70,14 @@ void initialize_timer1()
     
 }
 
+/*
+ * Interrupt Code
+ */
 void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T1Interrupt(void)
 { 
-    
-
-    if (counter%2== 0){
-    touchscreen_dimension('X');
-    dimensionB = 'X';
-    X_val = touchscreen_read();
-    
-    
-    }else{
-
-        touchscreen_dimension('Y');
-        dimensionB = 'Y';
-        Y_val = touchscreen_read();
-        
-    }
     counter ++;
-    
     CLEARBIT(IFS0bits.T1IF);   // Clear interrupt flag
 }
-
-
-void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T3Interrupt(void)
-{
-    if(missed_deadline==1)
-    {
-        md_counter++;
-    }
-    missed_deadline=1;
-    CLEARBIT(IFS0bits.T3IF);   // Clear interrupt flag
-}
-
-
 
 /**
  * @brief Initialize the servo PWM signals
@@ -239,16 +215,60 @@ double touchscreen_read() {
 /*
  * PD Controller
  */
-void setpoint_trajectory(){
-    
+float Kp = 0.02f;
+float Kd = 0.08f;
+
+float prev_x_error = 0, prev_y_error = 0;
+
+float compute_pd(float target, float actual, float* prev_error) {
+    float error = target - actual;
+    float d_error = (error - *prev_error) / (CONTROL_LOOP_PERIOD_MS / 1000.0f);
+    *prev_error = error;
+
+    return Kp * error + Kd * d_error;
 }
 
+/*
+ * Clamping and Mapping Functions
+*/
 
+#define SERVO_CENTER 1.45f
+#define SERVO_MIN 1.1f
+#define SERVO_MAX 1.9f
+#define MAX_U 5.0f
+
+float clamp(float val, float min, float max) {
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
+}
+
+float map_pd_to_pwm(float u) {
+    u = clamp(u, -MAX_U, MAX_U);
+    float scale = (SERVO_MAX - SERVO_CENTER) / MAX_U;
+    return clamp(SERVO_CENTER + scale * u, SERVO_MIN, SERVO_MAX);
+}
+
+/*
+ * Update Servos
+*/
+float x_pwm = 0.00f;
+float y_pwm = 0.00f;
+void update_servos(float x_pwm, float y_pwm) {
+    set_duty_cycle('X',x_pwm);  // tilt in X
+    set_duty_cycle('Y',y_pwm);   // tilt in Y
+}
 
 /*
  * Butterworth Filter N=1, Cutoff 3 Hz, sampling @ 50 Hz
  */
 
+void update_filter(uint16_t x_raw, uint16_t y_raw, bool is_x) {
+    if (is_x)
+        x_filtered = ALPHA * x_raw + (1.0f - ALPHA) * x_filtered;
+    else
+        y_filtered = ALPHA * y_raw + (1.0f - ALPHA) * y_filtered;
+}
 
 
 
@@ -267,21 +287,46 @@ void main_loop()
     servo_init('X');
     servo_init('Y');
     touchscreen_init();
+    initialize_timer1();
+        
 
 
     while (TRUE) 
     {
-        if(counter%2==0)
+        switch (counter)
         {
+        case 0:
             touchscreen_dimension('X');
             dimensionB = 'X';
-            Xval = touchscreen_read();
-        }
-        else
-        {
+            x_raw = touchscreen_read();
+
+            break;
+
+        case 1:
             touchscreen_dimension('Y');
             dimensionB = 'Y';
-            Yval = touchscreen_read();
+            y_raw = touchscreen_read();
+            break;
+
+        case 2:
+            // Update the filter with the raw values
+            update_filter(x_raw, y_raw, true);
+            update_filter(x_raw, y_raw, false);
+
+            // Compute PD control signals
+            float pd_x = compute_pd(center_x, x_filtered, &prev_x_error);
+            float pd_y = compute_pd(center_y, y_filtered, &prev_y_error);
+            
+            // Map PD outputs to servo angles
+            x_pwm = map_pd_to_pwm(pd_x);
+            y_pwm = map_pd_to_pwm(pd_y);
+
+            // Set servo angles
+            update_servos(x_pwm, y_pwm);
+
+            // Reset counter
+            counter = 0;
+            break;
         }
     }
 
