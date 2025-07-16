@@ -52,6 +52,9 @@ int md_counter=0;
 float x_filtered = 400.0f;
 float y_filtered = 400.0f;
 float t_seconds = 0.0f;
+int miss_counter = 0;
+int deadline_miss=0;
+int counter_5hz =0;
 
 
 
@@ -81,6 +84,13 @@ void initialize_timer1()
 void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T1Interrupt(void)
 { 
     counter ++;
+    counter_5hz++;
+    if(deadline_miss==1)
+    {
+        miss_counter++;
+    }
+    deadline_miss = 1;   
+    
     CLEARBIT(IFS0bits.T1IF);   // Clear interrupt flag
 }
 
@@ -351,7 +361,12 @@ void main_loop()
         
             break;
         }
-
+        if(counter_5hz%20==0)
+        {
+            lcd_locate(0, 6);
+            lcd_printf("miss deadlines: %d", miss_counter);
+        }
+        deadline_miss = 0;
         
     }
 
