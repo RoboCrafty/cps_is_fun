@@ -29,7 +29,7 @@
 #define TCKPS_256 0x03
 
 #define CIRCLE_RADIUS 70.0f
-#define CIRCLE_SPEED -3.0f         // radians per second
+#define CIRCLE_SPEED 2.5f         // radians per second
 #define PI 3.1415926f
 #define center_x 500
 #define center_y 235
@@ -249,8 +249,8 @@ float compute_pd(float target, float actual, float* prev_error) {
 */
 
 #define SERVO_CENTER 1.5f
-#define SERVO_MIN 0.7f
-#define SERVO_MAX 2.2f
+#define SERVO_MIN 0.9f
+#define SERVO_MAX 2.1f
 #define MAX_U 700.0f
 
 float clamp(float val, float min, float max) {
@@ -306,7 +306,8 @@ void main_loop()
     initialize_timer1();
         
 
-
+    int tick_counter = 0;
+    
     while (TRUE)
     {
         if (task_ready)  // Only do something if 10 ms have passed
@@ -354,7 +355,7 @@ void main_loop()
                     x_raw = touchscreen_read();
 
                     touchscreen_dimension('Y');
-
+                    
                     t_seconds += 0.02f;
                     break;
             }
