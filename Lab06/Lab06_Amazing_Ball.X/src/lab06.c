@@ -52,9 +52,8 @@ int md_counter=0;
 float x_filtered = 400.0f;
 float y_filtered = 400.0f;
 float t_seconds = 0.0f;
-int miss_counter = 0;
-int deadline_miss=0;
-int counter_5hz =0;
+
+bool task_ready = false;
 
 
 
@@ -83,14 +82,11 @@ void initialize_timer1()
  */
 void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T1Interrupt(void)
 { 
-    counter ++;
-    counter_5hz++;
-    if(deadline_miss==1)
-    {
-        miss_counter++;
+    counter++;
+    task_ready = true; // Signal that it's time to run a task
+    if (counter > 2) {
+        counter = 1; // Reset counter after 3 iterations
     }
-    deadline_miss = 1;   
-    
     CLEARBIT(IFS0bits.T1IF);   // Clear interrupt flag
 }
 
@@ -306,68 +302,60 @@ void main_loop()
         
 
 
-    while (TRUE) 
+    while (TRUE)
     {
-        /* lcd_locate(0, 5);
-            lcd_printf("Ball Position (X,Y) = (%.2f, %.2f)", x_raw, y_raw);
- */
-        switch (counter)
+        if (task_ready)  // Only do something if 10 ms have passed
         {
-            
-        case 0:
-            touchscreen_dimension('X');
-            dimensionB = 'X';
-            x_raw = touchscreen_read();
+            switch (counter)
+            {
+                case 0:
+                    // Set dimension to Y — don't read yet
+                    touchscreen_dimension('X');
+                    dimensionB = 'X';
+                    x_raw = touchscreen_read();
+                    touchscreen_dimension('Y');
+                    break;
 
-            break;
+                case 1:
+                    // Now 10ms have passed, read Y
+                    dimensionB = 'Y';
+                    y_raw = touchscreen_read();
+                    // Set dimension to X for next read
+                    touchscreen_dimension('X');
+                    break;
 
-        case 1:
-            touchscreen_dimension('Y');
-            dimensionB = 'Y';
-            y_raw = touchscreen_read();
-            
-            break;
+                case 2:
+                    
+                    // Apply filters
+                    update_filter(x_raw, y_raw, true);
+                    update_filter(x_raw, y_raw, false);
 
-        case 2:
-          /*   lcd_locate(0, 5);
-            lcd_printf("cOUNTER IS : %d", counter); */
-            // Update the filter with the raw values
-            update_filter(x_raw, y_raw, true);
-            update_filter(x_raw, y_raw, false);
-               
-            // Compute PD control signals
-            float x_target = center_x + CIRCLE_RADIUS * cosf(CIRCLE_SPEED * t_seconds);
-            float y_target = center_y + CIRCLE_RADIUS * sinf(CIRCLE_SPEED * t_seconds);
+                    // Compute target positions
+                    float x_target = center_x + CIRCLE_RADIUS * cosf(CIRCLE_SPEED * t_seconds);
+                    float y_target = center_y + CIRCLE_RADIUS * sinf(CIRCLE_SPEED * t_seconds);
 
-            // Compute PD control signalsL
-            float pd_x = compute_pd(x_target, x_filtered, &prev_x_error);
-            float pd_y = compute_pd(y_target, y_filtered, &prev_y_error);
-            
-            // Map PD outputs to servo angles
-            x_pwm = map_pd_to_pwm(pd_x);
-            y_pwm = map_pd_to_pwm(pd_y);
+                    // Compute PD
+                    float pd_x = compute_pd(x_target, x_filtered, &prev_x_error);
+                    float pd_y = compute_pd(y_target, y_filtered, &prev_y_error);
 
-            // Set servo angles
-            update_servos(x_pwm, y_pwm);
+                    // Map to PWM
+                    x_pwm = map_pd_to_pwm(pd_x);
+                    y_pwm = map_pd_to_pwm(pd_y);
 
-            // Reset counter
-            counter = 0;
-            t_seconds += 0.02f;
+                    // Update servos
+                    update_servos(x_pwm, y_pwm);
+                    // Read touchscreen X again
+                    dimensionB = 'X';
+                    x_raw = touchscreen_read();
 
-            touchscreen_dimension('X');
-            dimensionB = 'X';
-            x_raw = touchscreen_read();
+                    touchscreen_dimension('Y');
 
-        
-            break;
+                    t_seconds += 0.02f;
+                    break;
+            }
+
+            task_ready = false; // Don't run anything else until next interrupt
         }
-        if(counter_5hz%20==0)
-        {
-            lcd_locate(0, 6);
-            lcd_printf("miss deadlines: %d", miss_counter);
-        }
-        deadline_miss = 0;
-        
     }
 
 
