@@ -48,7 +48,6 @@ double x_raw = 0.0;
 double y_raw = 0.0;
 
 int missed_deadline= 0;
-int md_counter=0;
 float x_filtered = 400.0f;
 float y_filtered = 400.0f;
 float t_seconds = 0.0f;
@@ -81,14 +80,20 @@ void initialize_timer1()
  * Interrupt Code
  */
 void __attribute__((__interrupt__, __shadow__, __auto_psv__)) _T1Interrupt(void)
-{ 
-    counter++;
-    task_ready = true; // Signal that it's time to run a task
-    if (counter > 2) {
-        counter = 1; // Reset counter after 3 iterations
+{
+    if (task_ready) {
+        missed_deadline++; // Previous task was still running
     }
-    CLEARBIT(IFS0bits.T1IF);   // Clear interrupt flag
+
+    task_ready = true;  // Signal that a new period has started
+    counter++;
+    if (counter > 2) {
+        counter = 1;  // Loop through 0, 1, 2
+    }
+
+    CLEARBIT(IFS0bits.T1IF);  // Clear interrupt flag
 }
+
 
 /**
  * @brief Initialize the servo PWM signals
@@ -352,6 +357,14 @@ void main_loop()
 
                     t_seconds += 0.02f;
                     break;
+            }
+
+            // Deadline reporting at 5Hz (every 20 ticks = 200 ms)
+            tick_counter++;
+            if (tick_counter >= 20) {
+                lcd_locate(0, 3);
+                lcd_printf("Missed: %d    ", missed_deadline);
+                tick_counter = 0;
             }
 
             task_ready = false; // Don't run anything else until next interrupt
